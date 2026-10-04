@@ -1,0 +1,31 @@
+stages: 
+ - test 
+ - build
+ - scan
+
+include: 
+    - template: templates/trivy-scan.yml
+    - template: templates/sonar-scan.yml
+    - template: Jobs/SAST.yml
+    - template: Jobs/Secret-Detection-SAST.yml
+    - component: $CI_SERVER_FQDN/$CI_PROJECT_PATH/trivy-scan@$CI_COMMIT_SHA
+    inputs:
+    severity: CRITICAL
+unit-tests:
+  stage: test
+  image: python:3.12-slim
+  script:
+    - pip install pytest
+    - pytest -q
+
+build-image:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"

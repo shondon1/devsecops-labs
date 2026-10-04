@@ -1,0 +1,16 @@
+spec:
+  inpuits:
+    stage:
+        default: scan
+    severity:
+        default: CRITICAL
+    image:
+        default: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+---
+trivy-scan:
+    stage: $[[ inputs.stage ]]
+    image: aquasec/trivy:0.74.0
+        name: aquasec/trivy:0.74.0 #pinned purpose, never :latest
+        entrypoint: [""]
+    script:
+        - trivy image --exit-code 1--severity ${{ inputs.severity }} ${{ inputs.image }}
